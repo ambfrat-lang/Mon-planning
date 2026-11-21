@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-title" content="Mon planning">
 <meta name="theme-color" content="#f8f4ee">
 <title>Mon planning</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -138,10 +141,12 @@ input,button,select{font:inherit}
 
 .card,.month,.smonth{scroll-margin-top:112px}
 .pm h3 b{white-space:nowrap}
+
+.lockicon{justify-self:center;border-radius:20px;box-shadow:0 4px 14px rgba(40,60,100,.18)}
 </style>
 </head><body>
 <div id="lock" style="display:none"><form id="lockform" autocomplete="off">
-<h1>Mon planning</h1><p class="sub">Entre ton code d’accès.</p>
+<img class="lockicon" src="apple-touch-icon.png" alt="" width="84" height="84"><h1>Mon planning</h1><p class="sub">Entre ton code d’accès.</p>
 <input class="field" id="urlf" type="url" placeholder="Adresse du moteur (…/exec)" style="display:none">
 <input class="field" id="codef" type="password" placeholder="Code" required autocomplete="current-password">
 <button class="btn" type="submit">Ouvrir</button><p class="err" id="lockerr"></p>
@@ -157,7 +162,7 @@ input,button,select{font:inherit}
 <div class="view" id="v-reglages"></div>
 </main>
 <script>/* Mon planning — app web. Les données viennent du Google Sheet via le moteur Apps Script. */
-var APP_VERSION = '1.0.0';
+var APP_VERSION = '1.0.1';
 var SCRIPT_URL = ''; // adresse du moteur Apps Script (…/exec). Vide = demandée à l'ouverture.
 
 var LS = {
