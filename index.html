@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mon planning">
+<meta name="theme-color" content="#f8f4ee">
+<title>Mon planning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+/* Mise en page : résumé, mini-calendrier du mois, puis une carte par jour travaillé avec l'équipe de pédiatrie */
+--bg:#f8f4ee;--surface:#fffdfa;--ink:#22304d;--muted:#7b7f8a;--line:#ebe3d8;
+--jour:#e3a12f;--jour-soft:#fcefd4;--nuit:#3b78d8;--nuit-soft:#e1ebf8;--g24:#e5625c;--g24-soft:#fde3e1;--off-soft:#e6ecf4;--mark:#fbd2cf;
+--display:"Bricolage Grotesque",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+main{max-width:620px;margin:0 auto;padding:24px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+h1{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 6px rgba(120,90,50,.06);padding:10px 8px;text-align:center}
+.stat{min-width:0}
+.stat b{display:block;font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted)}
+.stat.nuit b{color:var(--nuit)}.stat.g24 b{color:var(--g24)}.stat.jour b{color:var(--jour)}
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 2px 8px rgba(120,90,50,.07);padding:12px}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow span{font-size:11px;color:var(--muted);text-align:center;padding-bottom:4px}
+.cell{aspect-ratio:1/1.05;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-decoration:none;color:var(--ink);font-variant-numeric:tabular-nums}
+.cell .n{font-weight:600;font-size:15px}.cell .k{font-size:10px;font-weight:600;letter-spacing:.02em}
+.cell.empty{visibility:hidden}
+.cell.rs .k{color:var(--muted);font-weight:400}
+.cell.off{background:var(--off-soft);color:var(--muted)}.cell.off .k{font-weight:400}
+.cell.nuit{background:var(--nuit);color:#fff}.cell.g24{background:var(--g24);color:#fff}.cell.jour{background:var(--jour);color:#fff}
+a.cell:focus-visible,a.cell:hover{outline:2px solid var(--ink);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.list{display:grid;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:18px;box-shadow:0 2px 8px rgba(120,90,50,.06);padding:14px;display:grid;gap:12px;scroll-margin-top:12px}
+.card.nuit{border-left-color:var(--nuit)}.card.g24{border-left-color:var(--g24)}.card.jour{border-left-color:var(--jour)}
+.card.offcard{background:var(--off-soft);border-left-color:var(--muted)}
+.card header{display:flex;align-items:center;gap:14px}
+.date{display:flex;flex-direction:column;align-items:center;width:68px;flex:none}
+.date .d{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.date .w{font-size:12px;color:var(--muted)}
+.what{display:flex;flex-direction:column;gap:4px}
+.pill{align-self:flex-start;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--off-soft);color:var(--ink)}
+.nuit .pill{background:var(--nuit-soft);color:var(--nuit)}.g24 .pill{background:var(--g24-soft);color:var(--g24)}.jour .pill{background:var(--jour-soft);color:var(--jour)}
+.h{font-weight:600;font-variant-numeric:tabular-nums}
+.parts{display:grid;gap:10px}
+.parts:has(.part + .part){grid-template-columns:1fr 1fr}
+@media (max-width:420px){.parts:has(.part + .part){grid-template-columns:1fr}}
+.part{background:var(--bg);border-radius:10px;padding:10px 12px}
+.part h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+dt{font-size:12px;font-weight:600;color:var(--muted);padding-top:1px}
+dd{margin:0}
+mark{background:var(--mark);color:inherit;border-radius:4px;padding:0 3px}
+.note{margin:0;font-size:13px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;letter-spacing:-.01em}
+.month{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;scroll-margin-top:64px}
+nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:6px;padding:8px 0}
+nav.tabs a{flex:1;text-align:center;text-decoration:none;color:var(--ink);font-weight:600;font-size:14px;padding:8px 0;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+nav.tabs a:hover,nav.tabs a:focus-visible{border-color:var(--ink);outline:none}
+.sen{font-weight:600}
+.cell.sem{background:#8a6bbf;color:#fff}
+.card.sem{border-left-color:#8a6bbf}
+.sem .pill{background:#ece5f6;color:#6a4ea3}
+.smonth{display:grid;gap:6px;scroll-margin-top:64px}
+.smonth h3{font-family:var(--display);font-size:18px;margin:10px 0 2px}
+.sday{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.sday.we{background:#fbf6ee}
+.sday.today{border:2px solid var(--g24)}
+.sday summary{display:flex;justify-content:space-between;gap:10px;padding:10px 0;cursor:pointer;list-style:none;font-variant-numeric:tabular-nums}
+.sday summary::-webkit-details-marker{display:none}
+.sd{font-weight:600;min-width:70px}.ss{color:var(--muted);font-size:13px;text-align:right}
+dl.sv{padding:0 0 12px;font-size:14px}
+.u{display:inline-block;font-size:10px;font-weight:700;border-radius:4px;padding:0 4px;margin-left:3px;vertical-align:1px;background:var(--off-soft);color:var(--muted)}
+.u1{background:var(--g24-soft);color:var(--g24)}.u2{background:var(--nuit-soft);color:var(--nuit)}
+.me{color:var(--g24)}
+nav.tabs.small{position:static}
+.sv{display:grid;gap:10px;padding:0 0 12px}
+.sv .top{display:grid;gap:4px;margin:0;font-size:14px}
+.sv .top span{display:flex;gap:8px}.sv i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;min-width:64px;display:inline-block}
+.shift{border-radius:10px;padding:8px 10px}
+.shift.J{background:var(--jour-soft)}.shift.N{background:var(--nuit-soft)}
+.shift h4{margin:0 0 6px;font-size:13px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cols .all{grid-column:1/-1}
+.sec{background:var(--surface);border-radius:8px;padding:6px 8px;font-size:13px;line-height:1.35}
+.sec h5{margin:0 0 4px;font-size:12px}
+.sec.ped h5{color:var(--g24)}.sec.neo h5{color:var(--nuit)}
+.sec p{margin:0 0 4px}.sec p i{display:block;min-width:0;font-size:10px}
+.oth{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.tbd{margin:0;font-size:13px;color:var(--muted);font-style:italic}
+
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sync{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+nav.views{position:sticky;top:0;z-index:6;background:var(--bg);display:flex;gap:6px;padding:8px 0 4px}
+nav.views a{flex:1;text-align:center;text-decoration:none;color:var(--ink);font-weight:600;font-size:13px;padding:8px 0;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+nav.views a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+nav.tabs{top:44px}
+.view{display:none;gap:22px;grid-template-columns:minmax(0,1fr)}
+.view.on{display:grid}
+.cell.cons{background:#5a9e7c;color:#fff}
+.card.cons{border-left-color:#5a9e7c}.cons .pill{background:#dcefe4;color:#3c7a5a}
+.co{font-size:13px;color:var(--muted);margin:0}
+/* écran du code */
+#lock{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+#lock form{width:100%;max-width:340px;display:grid;gap:12px;text-align:center}
+#lock h1{font-size:26px}
+input,button,select{font:inherit}
+.field{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:16px}
+.btn{padding:12px 14px;border:0;border-radius:12px;background:var(--ink);color:#fff;font-weight:600;cursor:pointer}
+.btn.light{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.err{color:var(--g24);font-size:13px;min-height:18px;margin:0}
+/* salaire */
+.paybox{background:#f1f5ee;border:2px dashed #7a9a6b;border-radius:18px;padding:14px;display:grid;gap:12px}
+.paybox .lock{justify-self:start;font-size:11px;font-weight:700;color:#4f6b42;background:#dfe9d8;border-radius:99px;padding:3px 8px}
+.pm{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:6px}
+.pm h3{font-family:var(--display);font-size:17px;margin:0;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pm h3 b{color:#4f6b42;font-size:22px;font-variant-numeric:tabular-nums}
+.pm table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.pm td{padding:3px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.pm td:last-child{text-align:right;white-space:nowrap;padding-left:8px}
+.pm tr.s td{color:var(--muted)}
+.pm tr.t td{font-weight:700;border-bottom:none}
+.blur .amt{filter:blur(7px);user-select:none}
+/* réglages */
+.form{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:10px}
+.form label{display:grid;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ok{color:#3c7a5a;font-size:13px;min-height:18px;margin:0}
+
+.card,.month,.smonth{scroll-margin-top:112px}
+.pm h3 b{white-space:nowrap}
+</style>
+</head><body>
+<div id="lock" style="display:none"><form id="lockform" autocomplete="off">
+<h1>Mon planning</h1><p class="sub">Entre ton code d’accès.</p>
+<input class="field" id="urlf" type="url" placeholder="Adresse du moteur (…/exec)" style="display:none">
+<input class="field" id="codef" type="password" placeholder="Code" required autocomplete="current-password">
+<button class="btn" type="submit">Ouvrir</button><p class="err" id="lockerr"></p>
+</form></div>
+<main>
+<section class="top"><div><h1 id="titre">Mon planning</h1><p class="sub" id="soustitre"></p>
+<div class="legend"><span><i style="background:var(--jour)"></i>Journée</span><span><i style="background:var(--nuit)"></i>Nuit</span><span><i style="background:var(--g24)"></i>24 h</span><span>repos = repos de sécurité</span></div></div>
+<div class="sync" id="sync"></div></section>
+<nav class="views"><a href="#planning">Planning</a><a href="#service">Service</a><a href="#salaire">Salaire</a><a href="#reglages">Réglages</a></nav>
+<div class="view on" id="v-planning"></div>
+<div class="view" id="v-service"></div>
+<div class="view" id="v-salaire"></div>
+<div class="view" id="v-reglages"></div>
+</main>
+<script>/* Mon planning — app web. Les données viennent du Google Sheet via le moteur Apps Script. */
+var APP_VERSION = '1.0.0';
+var SCRIPT_URL = ''; // adresse du moteur Apps Script (…/exec). Vide = demandée à l'ouverture.
+
+var LS = {
+  get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+var D = null; // données
+var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+var JC = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+
+function $(s) { return document.querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function pd(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2] || 1, 12); }
+function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function ym(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+function addMonths(s, n) { var d = pd(s + '-01'); d.setMonth(d.getMonth() + n); return ym(d); }
+function moisNom(s) { var d = pd(s + '-01'); return MOIS[d.getMonth()] + ' ' + d.getFullYear(); }
+function deMois(m) { var n = moisNom(m); return (/^[aeiouy]/.test(n) ? 'd’' : 'de ') + n; }
+function court(d) { var c = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']; return c[d.getMonth()] + ' ' + d.getFullYear(); }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function eur(x) { return Math.round(x).toLocaleString('fr-FR') + ' €'; }
+
+/* ---------- Accès ---------- */
+function url() { return SCRIPT_URL || LS.get('mp_url') || ''; }
+
+function appel(action, extra) {
+  var body = { code: LS.get('mp_code') || '', action: action };
+  for (var k in extra || {}) body[k] = extra[k];
+  return fetch(url(), { method: 'POST', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+}
+
+function montrerLock(msg) {
+  $('#lock').style.display = 'flex';
+  $('#urlf').style.display = SCRIPT_URL ? 'none' : 'block';
+  if (!SCRIPT_URL) $('#urlf').value = LS.get('mp_url') || '';
+  $('#lockerr').textContent = msg || '';
+  $('#codef').value = '';
+  setTimeout(function () { $('#codef').focus(); }, 50);
+}
+
+function erreurTexte(e) {
+  return { code: 'Code incorrect.', bloque: 'Trop d\'essais : réessaie dans 15 minutes.', pas_de_code: 'Aucun code défini dans le Sheet (menu 🔒 Mon planning).' }[e] || 'Connexion impossible.';
+}
+
+function charger(depuisLock) {
+  var cache = LS.get('mp_cache');
+  if (!depuisLock && cache) { try { D = JSON.parse(cache); rendre(); etat('Données du ' + fmtLu(D.lu)); } catch (e) {} }
+  return appel('lire').then(function (r) {
+    if (!r.ok) {
+      if (r.err === 'code' || r.err === 'pas_de_code' || r.err === 'bloque') { LS.del('mp_code'); LS.del('mp_cache'); D = null; montrerLock(erreurTexte(r.err)); }
+      return false;
+    }
+    var vc = LS.get('mp_vcode');
+    if (vc && r.versionCode && vc !== r.versionCode && !depuisLock) { LS.del('mp_code'); LS.del('mp_cache'); D = null; montrerLock('Le code a changé.'); return false; }
+    LS.set('mp_vcode', r.versionCode || '');
+    D = r.data; LS.set('mp_cache', JSON.stringify(D));
+    $('#lock').style.display = 'none';
+    rendre(); etat('À jour · ' + fmtLu(D.lu));
+    return true;
+  }).catch(function () {
+    if (D) etat('Hors ligne · données du ' + fmtLu(D.lu));
+    else montrerLock('Connexion impossible. Vérifie le réseau.');
+    return false;
+  });
+}
+function fmtLu(s) { if (!s) return ''; var p = s.split(' '); var d = pd(p[0]); return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + (p[1] || ''); }
+function etat(t) { $('#sync').textContent = t; }
+
+/* ---------- Modèle ---------- */
+function R(k, def) { return (D.reglages && D.reglages[k]) || def || ''; }
+function feries() { return R('Jours fériés').split(/[,;\s]+/).map(function (s) { var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : s; }).filter(Boolean); }
+function byDate(arr) { var o = {}; (arr || []).forEach(function (r) { if (r.date) o[r.date] = r; }); return o; }
+
+var TYPES = {
+  'Journée': { c: 'jour', k: 'Jour' }, 'Nuit': { c: 'nuit', k: 'Nuit' }, '24 h': { c: 'g24', k: '24 h' },
+  'Journée + nuit': { c: 'g24', k: 'J+N' }, 'Demi-garde': { c: 'g24', k: '½ g' }, 'Astreinte': { c: 'nuit', k: 'Astr.' },
+  'Consultation': { c: 'cons', k: 'Consult.' }, 'Séminaire': { c: 'sem', k: 'Sémin.' }, 'Congé': { c: 'off', k: 'Congé' }
+};
+function typeOf(c) { return TYPES[c] || { c: 'jour', k: c.slice(0, 6) }; }
+var GARDE = { 'Nuit': 1, '24 h': 1, 'Journée + nuit': 1 };
+
+function horaires(c) {
+  var j = R('Horaires journée', '8h45–18h').split(/[–-]/), n = R('Horaires nuit', '18h–8h45').split(/[–-]/);
+  if (c === 'Journée') return j[0] + ' → ' + j[1];
+  if (c === 'Nuit') return n[0] + ' → ' + n[1];
+  if (c === '24 h' || c === 'Journée + nuit') return j[0] + ' → ' + n[1];
+  return '';
+}
+
+function periode() {
+  var a = pd(R('Début', iso(new Date()))), b = pd(R('Fin', iso(addDays(new Date(), 90))));
+  return { a: a, b: b };
+}
+function moisPeriode() {
+  var p = periode(), out = [], m = ym(p.a), fin = ym(p.b);
+  while (m <= fin) { out.push(m); m = addMonths(m, 1); }
+  return out;
+}
+
+function mesJours() { return byDate(D.mesJours); }
+
+function etatJour(dIso, mj, inter, prenom) {
+  if (mj[dIso]) return mj[dIso].creneau;
+  var hier = iso(addDays(pd(dIso), -1));
+  if (mj[hier] && GARDE[mj[hier].creneau]) return 'repos';
+  var it = inter[dIso];
+  if (it && prenom && String(it.off).indexOf(prenom) >= 0) return 'off';
+  return '';
+}
+
+/* ---------- Rendu : planning ---------- */
+function mk(txt) {
+  var s = esc(txt), n = R('Personne à surligner');
+  if (n) s = s.split(esc(n)).join('<mark>' + esc(n) + '</mark>');
+  return s;
+}
+function liste(txt) { return txt ? mk(txt) : '<span class="tbd">—</span>'; }
+
+function pediatre(sv, quand) {
+  if (!sv || !sv.pediatre) return '';
+  var p = sv.pediatre, m = p.match(/^(.*?)\s*\(jour\)\s*\/\s*(.*?)\s*\(nuit\)$/);
+  if (m) return quand === 'N' ? m[2] : m[1];
+  return p;
+}
+
+function equipe(sv, q) {
+  if (!sv) return '<p class="tbd">Équipe à venir</p>';
+  var p = q === 'J' ? 'j' : 'n', sect = String(sv.secteurs).toLowerCase() !== 'non';
+  var h = '<dl><dt>Sénior</dt><dd class="sen">' + liste(pediatre(sv, q)) + '</dd>';
+  h += '<dt>IDE</dt><dd>' + liste(sv[p + 'PedIde']) + '</dd><dt>AP</dt><dd>' + liste(sv[p + 'PedAp']) + '</dd>';
+  if (sv[p + 'Autres']) h += '<dt>Autres</dt><dd>' + mk(sv[p + 'Autres']) + '</dd>';
+  h += '</dl>';
+  if (sect && (sv[p + 'NeoIde'] || sv[p + 'NeoAp'])) h += '<p class="co">Néonat : ' + mk([sv[p + 'NeoIde'], sv[p + 'NeoAp']].filter(Boolean).join(' · ')) + '</p>';
+  return h;
+}
+
+function coInternes(it, c, prenom) {
+  if (!it) return '';
+  var t = [];
+  if (it.journee && it.journee.indexOf(prenom) < 0) t.push('Journée : ' + esc(it.journee));
+  if (it.garde && it.garde.indexOf(prenom) < 0) t.push('Garde : ' + esc(it.garde));
+  return t.length ? '<p class="co">Internes · ' + t.join(' · ') + '</p>' : '';
+}
+
+function rendrePlanning() {
+  var mj = mesJours(), inter = byDate(D.internes), serv = byDate(D.service), prenom = R('Prénom dans le planning des internes');
+  var p = periode(), mois = moisPeriode(), h = '';
+  h += '<nav class="tabs" aria-label="Mois">' + mois.map(function (m) { return '<a href="#m' + m + '">' + cap(MOIS[pd(m + '-01').getMonth()]) + '</a>'; }).join('') + '</nav>';
+  mois.forEach(function (m) {
+    var d0 = pd(m + '-01'), nb = new Date(d0.getFullYear(), d0.getMonth() + 1, 0).getDate();
+    var st = { nuit: 0, g24: 0, jour: 0, off: 0 }, cells = '', cards = '';
+    var dec = (d0.getDay() + 6) % 7;
+    for (var i = 0; i < dec; i++) cells += '<div class="cell empty"></div>';
+    for (var j = 1; j <= nb; j++) {
+      var d = new Date(d0.getFullYear(), d0.getMonth(), j, 12), di = iso(d);
+      if (d < p.a || d > p.b) { cells += '<div class="cell"><span class="n">' + j + '</span></div>'; continue; }
+      var e = etatJour(di, mj, inter, prenom);
+      if (e === 'repos') { cells += '<div class="cell rs"><span class="n">' + j + '</span><span class="k">repos</span></div>'; continue; }
+      if (e === 'off') { st.off++; cells += '<div class="cell off"><span class="n">' + j + '</span><span class="k">off</span></div>'; continue; }
+      if (!e) { cells += '<div class="cell"><span class="n">' + j + '</span></div>'; continue; }
+      var t = typeOf(e);
+      if (e === 'Nuit') st.nuit++; else if (e === '24 h' || e === 'Journée + nuit') st.g24++; else if (e === 'Journée') st.jour++;
+      cells += '<a class="cell ' + t.c + '" href="#d' + di + '"><span class="n">' + j + '</span><span class="k">' + esc(t.k) + '</span></a>';
+      var r = mj[di], sv = serv[di], parts = '';
+      if (e === 'Journée' || e === 'Consultation') parts = '<div class="part"><h4>Journée</h4>' + equipe(sv, 'J') + '</div>';
+      else if (e === 'Nuit') parts = '<div class="part"><h4>Nuit</h4>' + equipe(sv, 'N') + '</div>';
+      else if (GARDE[e]) parts = '<div class="part"><h4>Jour</h4>' + equipe(sv, 'J') + '</div><div class="part"><h4>Nuit</h4>' + equipe(sv, 'N') + '</div>';
+      cards += '<article class="card ' + t.c + '" id="d' + di + '"><header><div class="date"><span class="d">' + j + '</span><span class="w">' + JOURS[d.getDay()] + '</span></div><div class="what"><span class="pill">' + esc(e) + '</span><span class="h">' + esc(horaires(e) || r.lieu || '') + '</span></div></header>'
+        + (parts ? '<div class="parts">' + parts + '</div>' : '') + coInternes(inter[di], e, prenom)
+        + (r.remarque ? '<p class="note">' + esc(r.remarque) + '</p>' : '') + '</article>';
+    }
+    h += '<section class="month" id="m' + m + '"><h2>' + cap(moisNom(m)) + '</h2><div class="stats"><div class="stat nuit"><b>' + st.nuit + '</b><span>nuits</span></div><div class="stat g24"><b>' + st.g24 + '</b><span>gardes 24 h</span></div><div class="stat jour"><b>' + st.jour + '</b><span>journées</span></div><div class="stat"><b>' + st.off + '</b><span>jours off</span></div></div>'
+      + '<div class="cal"><div class="dow"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div><div class="grid">' + cells + '</div></div><div class="list">' + cards + '</div></section>';
+  });
+  $('#v-planning').innerHTML = h;
+}
+
+/* ---------- Rendu : service ---------- */
+function bloc(sv, q) {
+  var p = q === 'J' ? 'j' : 'n', sect = String(sv.secteurs).toLowerCase() !== 'non';
+  var cols = sect
+    ? '<div class="sec ped"><h5>Pédiatrie</h5><p><i>IDE</i>' + liste(sv[p + 'PedIde']) + '</p><p><i>AP</i>' + liste(sv[p + 'PedAp']) + '</p></div><div class="sec neo"><h5>Néonat</h5><p><i>IDE</i>' + liste(sv[p + 'NeoIde']) + '</p><p><i>AP</i>' + liste(sv[p + 'NeoAp']) + '</p></div>'
+    : '<div class="sec all"><h5>Service (secteurs non indiqués)</h5><p><i>IDE</i>' + liste(sv[p + 'PedIde']) + '</p><p><i>AP</i>' + liste(sv[p + 'PedAp']) + '</p></div>';
+  return '<div class="cols">' + cols + '</div>' + (sv[p + 'Autres'] ? '<p class="oth">Autres : ' + mk(sv[p + 'Autres']) + '</p>' : '');
+}
+
+function rendreService() {
+  var inter = byDate(D.internes), serv = byDate(D.service), prenom = R('Prénom dans le planning des internes'), p = periode();
+  var hs = R('Horaires équipe soignante', 'Jour 7h–19h · Nuit 19h–7h').split('·');
+  var h = '<section class="month"><h2>Tout le service, jour par jour</h2>' + (R('Note équipe') ? '<p class="note">' + esc(R('Note équipe')) + '</p>' : '')
+    + '<nav class="tabs small">' + moisPeriode().map(function (m) { return '<a href="#s' + m + '">' + cap(MOIS[pd(m + '-01').getMonth()]).slice(0, 4) + '.</a>'; }).join('') + '<a href="#" id="today">Aujourd’hui</a></nav>';
+  var cur = '';
+  for (var d = new Date(p.a); d <= p.b; d = addDays(d, 1)) {
+    var di = iso(d), m = ym(d);
+    if (m !== cur) { if (cur) h += '</div>'; cur = m; h += '<div class="smonth" id="s' + m + '"><h3>' + cap(moisNom(m)) + '</h3>'; }
+    var it = inter[di] || {}, sv = serv[di], we = d.getDay() === 0 || d.getDay() === 6 || feries().indexOf(di) >= 0;
+    var me = function (x) { return x ? esc(x).split(esc(prenom)).join('<b class="me">' + esc(prenom) + '</b>') : '—'; };
+    var internes = 'Jour ' + me(it.journee) + ' · Garde ' + me(it.garde);
+    h += '<details class="sday' + (we ? ' we' : '') + '" data-date="' + di + '"><summary><span class="sd">' + JC[d.getDay()] + ' ' + d.getDate() + '</span><span class="ss">' + esc(sv ? sv.pediatre : '') + '</span></summary>';
+    if (sv) h += '<div class="sv"><p class="top"><span><i>Pédiatre</i><b class="sen">' + esc(sv.pediatre) + '</b></span><span><i>Internes</i>' + internes + '</span></p><div class="shift J"><h4>☀ ' + esc((hs[0] || '').trim()) + '</h4>' + bloc(sv, 'J') + '</div><div class="shift N"><h4>☾ ' + esc((hs[1] || '').trim()) + '</h4>' + bloc(sv, 'N') + '</div></div>';
+    else h += '<dl class="sv"><dt>Internes</dt><dd>' + internes + '</dd><dt>Équipe</dt><dd class="tbd">à venir</dd></dl>';
+    h += '</details>';
+  }
+  if (cur) h += '</div>';
+  $('#v-service').innerHTML = h + '</section>';
+  var el = document.querySelector('[data-date="' + iso(new Date()) + '"]');
+  if (el) { el.open = true; el.classList.add('today'); }
+  $('#today').addEventListener('click', function (e) { e.preventDefault(); if (el) { el.open = true; el.scrollIntoView({ block: 'start' }); } });
+}
+
+/* ---------- Rendu : salaire (net uniquement) ---------- */
+function P(k, def) { var v = D.salaire && D.salaire.params ? D.salaire.params[k] : undefined; return (v === undefined || v === null || v === '') ? def : v; }
+
+function valeurGarde(di, c) {
+  var GS = P('Garde de nuit en semaine', 234.8), GW = P('Garde samedi nuit, dimanche ou férié (jour ou nuit)', 256.86), DG = P('Demi-garde samedi après-midi', 128.43);
+  var wd = pd(di).getDay(), fer = feries().indexOf(di) >= 0;
+  var weN = wd === 6 || wd === 0 || fer;
+  if (c === 'Nuit' || c === 'Journée + nuit') return weN ? { m: GW, lab: 'nuit WE/férié' } : { m: GS, lab: 'nuit semaine' };
+  if (c === '24 h') {
+    if (wd === 0 || fer) return { m: 2 * GW, lab: '24 h dimanche/férié' };
+    if (wd === 6) return { m: DG + GW, lab: '24 h samedi' };
+    return { m: GS, lab: 'nuit semaine' };
+  }
+  if (c === 'Demi-garde') return { m: DG, lab: 'demi-garde' };
+  return null;
+}
+function valeurHors(t) {
+  var GS = P('Garde de nuit en semaine', 234.8), GW = P('Garde samedi nuit, dimanche ou férié (jour ou nuit)', 256.86), DG = P('Demi-garde samedi après-midi', 128.43);
+  t = String(t).toLowerCase();
+  if (t.indexOf('demi') >= 0) return DG;
+  if (t.indexOf('semaine') >= 0) return GS;
+  return GW;
+}
+
+function rendreSalaire() {
+  var taux = P('Taux net / brut', 0.79), pas = P('Taux de prélèvement à la source', 0), dec = P('Décalage de paiement des gardes (mois)', 1);
+  var k = taux * (1 - (pas > 1 ? pas / 100 : pas));
+  var fixe = P('Émoluments bruts mensuels', 0) + P('Indemnité de sujétion brute mensuelle', 0) + P('Autres éléments fixes bruts mensuels', 0);
+  var parMois = {};
+  (D.mesJours || []).forEach(function (r) {
+    var v = valeurGarde(r.date, r.creneau); if (!v) return;
+    var m = r.date.slice(0, 7); parMois[m] = parMois[m] || { tot: 0, det: {} };
+    parMois[m].tot += v.m; var dd = parMois[m].det[v.lab] = parMois[m].det[v.lab] || { n: 0, m: 0 }; dd.n++; dd.m += v.m;
+  });
+  (D.salaire.horsPlanning || []).forEach(function (r) {
+    if (!r.mois) return; var m = r.mois; parMois[m] = parMois[m] || { tot: 0, det: {} };
+    var v = valeurHors(r.type) * (r.nombre || 0); parMois[m].tot += v;
+    var lab = r.type + (r.lieu ? ' · ' + r.lieu : ''); var dd = parMois[m].det[lab] = parMois[m].det[lab] || { n: 0, m: 0 }; dd.n += r.nombre || 0; dd.m += v;
+  });
+  var primes = {}; (D.salaire.primes || []).forEach(function (r) { if (r.mois) (primes[r.mois] = primes[r.mois] || []).push(r); });
+  var reel = {}; (D.salaire.paies || []).forEach(function (r) { if (r.mois) reel[r.mois] = r; });
+  var mois = moisPeriode(); mois.push(addMonths(mois[mois.length - 1], dec || 0));
+  mois = mois.filter(function (m, i) { return mois.indexOf(m) === i; });
+  var h = '<section class="month"><h2>Salaire net estimé</h2><div class="paybox blur" id="paybox"><span class="lock">PERSO · touche pour afficher</span>';
+  mois.forEach(function (m) {
+    var src = addMonths(m, -(dec || 0)), g = parMois[src] || { tot: 0, det: {} }, pr = primes[m] || [];
+    var prTot = pr.reduce(function (a, r) { return a + (r.brut || 0); }, 0), net = (fixe + g.tot + prTot) * k;
+    var rows = '<tr><td>Fixe (émoluments + indemnités)</td><td class="amt">' + eur(fixe * k) + '</td></tr>';
+    rows += '<tr><td>Gardes ' + deMois(src) + '</td><td class="amt">' + eur(g.tot * k) + '</td></tr>';
+    Object.keys(g.det).forEach(function (l) { rows += '<tr class="s"><td>· ' + g.det[l].n + ' × ' + esc(l) + '</td><td class="amt">' + eur(g.det[l].m * k) + '</td></tr>'; });
+    pr.forEach(function (r) { rows += '<tr><td>' + esc(r.remarque || 'Prime ponctuelle') + '</td><td class="amt">' + eur(r.brut * k) + '</td></tr>'; });
+    if (reel[m]) rows += '<tr class="t"><td>Net réellement payé</td><td class="amt">' + eur(reel[m].net) + ' (écart ' + (reel[m].net - net >= 0 ? '+' : '') + eur(reel[m].net - net) + ')</td></tr>';
+    h += '<div class="pm"><h3>Paie de ' + moisNom(m) + '<b class="amt">≈ ' + eur(net) + '</b></h3><table>' + rows + '</table></div>';
+  });
+  h += '<p class="note">Montants nets ' + (pas ? 'après' : 'avant') + ' prélèvement à la source, calculés depuis l’onglet Salaire du Sheet (taux net/brut ' + String(taux).replace('.', ',') + (dec ? ', gardes payées ' + dec + ' mois plus tard' : '') + '). Un samedi en 24 h compte une demi-garde l’après-midi et la nuit ; un dimanche ou férié en 24 h compte deux gardes.</p></div></section>';
+  $('#v-salaire').innerHTML = h;
+  $('#paybox').addEventListener('click', function () { this.classList.toggle('blur'); this.querySelector('.lock').textContent = this.classList.contains('blur') ? 'PERSO · touche pour afficher' : 'PERSO · touche pour masquer'; });
+}
+
+/* ---------- Rendu : réglages ---------- */
+var CHAMPS = [['Titre', 'text'], ['Lieu', 'text'], ['Nom', 'text'], ['Prénom dans le planning des internes', 'text'], ['Début', 'date'], ['Fin', 'date'], ['Personne à surligner', 'text'], ['Jours fériés', 'text']];
+function rendreReglages() {
+  var f = CHAMPS.map(function (c) { return '<label>' + esc(c[0]) + '<input class="field" type="' + c[1] + '" name="' + esc(c[0]) + '" value="' + esc(R(c[0])) + '"></label>'; }).join('');
+  $('#v-reglages').innerHTML = '<section class="month"><h2>Réglages</h2><form class="form" id="fr">' + f
+    + '<p class="note">Jours fériés au format AAAA-MM-JJ, séparés par des virgules. Les autres données (jours, équipes, salaire) se modifient dans le Google Sheet.</p>'
+    + '<button class="btn" type="submit">Enregistrer</button><p class="ok" id="frok"></p></form>'
+    + '<div class="form"><button class="btn light" type="button" id="maj">Recharger les données</button><button class="btn light" type="button" id="out">Verrouiller cet appareil</button><p class="note">Version ' + APP_VERSION + '</p></div></section>';
+  $('#fr').addEventListener('submit', function (e) {
+    e.preventDefault(); var o = {};
+    CHAMPS.forEach(function (c) { o[c[0]] = this.elements[c[0]].value; }, this);
+    $('#frok').textContent = 'Enregistrement…';
+    appel('reglages', { reglages: o }).then(function (r) {
+      if (!r.ok) { $('#frok').textContent = erreurTexte(r.err); return; }
+      D = r.data; LS.set('mp_cache', JSON.stringify(D)); rendre(); location.hash = '#reglages'; $('#frok').textContent = 'Enregistré dans le Sheet.';
+    }).catch(function () { $('#frok').textContent = 'Connexion impossible.'; });
+  });
+  $('#maj').addEventListener('click', function () { etat('Mise à jour…'); charger(); });
+  $('#out').addEventListener('click', function () { LS.del('mp_code'); LS.del('mp_cache'); D = null; montrerLock(''); });
+}
+
+/* ---------- Navigation ---------- */
+function rendre() {
+  if (!D) return;
+  document.title = 'Mon planning · ' + R('Titre');
+  $('#titre').textContent = R('Titre', 'Mon planning') + ' · ' + court(periode().a) + ' → ' + court(periode().b);
+  $('#soustitre').textContent = [R('Nom'), R('Lieu')].filter(Boolean).join(' · ');
+  rendrePlanning(); rendreService(); rendreSalaire(); rendreReglages(); vue();
+}
+function vue() {
+  var h = location.hash.replace('#', '') || 'planning', v = 'planning';
+  if (['service', 'salaire', 'reglages'].indexOf(h) >= 0) v = h;
+  else if (h.charAt(0) === 's' && h.length === 8) v = 'service';
+  document.querySelectorAll('.view').forEach(function (x) { x.classList.toggle('on', x.id === 'v-' + v); });
+  document.querySelectorAll('nav.views a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + v); });
+  if (['service', 'salaire', 'reglages', 'planning', ''].indexOf(h) >= 0) window.scrollTo(0, 0);
+  else { var el = document.getElementById(h); if (el) el.scrollIntoView({ block: 'start' }); }
+}
+window.addEventListener('hashchange', vue);
+
+/* ---------- Démarrage ---------- */
+document.addEventListener('DOMContentLoaded', function () {
+  $('#lockform').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!SCRIPT_URL) { var u = $('#urlf').value.trim(); if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)) { $('#lockerr').textContent = 'Adresse du moteur invalide (…/exec).'; return; } LS.set('mp_url', u); }
+    LS.set('mp_code', $('#codef').value); LS.set('mp_ver', APP_VERSION);
+    $('#lockerr').textContent = 'Vérification…';
+    charger(true);
+  });
+  if (!url() || !LS.get('mp_code') || LS.get('mp_ver') !== APP_VERSION) { LS.del('mp_code'); LS.del('mp_cache'); montrerLock(''); }
+  else charger();
+});
+</script>
+</body></html>
